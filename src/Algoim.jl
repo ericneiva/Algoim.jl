@@ -20,9 +20,7 @@ to_uvector(x,::Val{2}) = to_2D_uvector(x)
 to_uvector(x,::Val{3}) = to_3D_uvector(x)
 
 export to_uvector
-
 export AlgoimUvector
-export AlgoimUvectorAllocated
 
 @inline to_const_array(p) = ConstArray(data_array(p),length(p))
 
@@ -31,6 +29,7 @@ export to_const_array
 # Low-level methods to fill quadrature data
 
 ## Implementation depends on elementary type
+
 using StaticArrays # SVector
 using LinearAlgebra: norm
 
@@ -61,6 +60,7 @@ end
 function AlgoimCallLevelSetFunction(f::Function,g::Function)
   φ(p) = f(p); ∇φ(p) = g(p)
   φ(p,i::Number) = f(p); ∇φ(p,i::Number) = g(p)
+  lsbuffer[].φ ≠ nothing && @warn "Updating LS buffer. This could have unexpected consequences."
   update_lsbuffer!(φ,∇φ)
   AlgoimCallLevelSetFunction{typeof(φ),typeof(∇φ),typeof(nothing),typeof(nothing)}(φ,∇φ,nothing,nothing)
 end
@@ -136,7 +136,7 @@ function to_physical_domain!(coords::Vector{V},weights::Vector{T},phi::LevelSetF
   elseif phase == CUT 
     if !isempty(weights)
       n = map( ci -> normal(phi,ci,cell_id) .* range, coords )
-      detJ_Γ = detJ ./ norm.(n) # j*sqrt(n⋅inv(c)⋅n)) when map is between cuboids
+      detJ_Γ = detJ ./ norm.(n) # = j*sqrt(n⋅inv(c)⋅n)) assuming from-to cuboids
       weights = detJ_Γ .* weights
     end
   else
