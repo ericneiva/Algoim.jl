@@ -1,5 +1,7 @@
 # Algoim
 
+[![DOI](https://zenodo.org/badge/611211717.svg)](https://zenodo.org/badge/latestdoi/611211717)
+
 A Julia wrapper for [algoim](https://github.com/algoim/algoim), providing algorithms for implicitly defined geometry, level set methods, and Voronoi implicit interface methods
 
 **If you use this package, please cite algoim, according to the guidelines on the [algoim Github page](https://algoim.github.io).**
