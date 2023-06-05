@@ -60,7 +60,10 @@ end
 function AlgoimCallLevelSetFunction(f::Function,g::Function)
   φ(p) = f(p); ∇φ(p) = g(p)
   φ(p,i::Number) = f(p); ∇φ(p,i::Number) = g(p)
-  lsbuffer[].φ ≠ nothing && @warn "Updating LS buffer. This could have unexpected consequences."
+  lsbuffer[].φ ≠ nothing && @warn "Updating the global level-set buffer... 
+    This could have unexpected consequences. Please, verify that you are 
+    querying the correct level set function and gradient throughout the 
+    simulation workflow." maxlog=1
   update_lsbuffer!(φ,∇φ)
   AlgoimCallLevelSetFunction{typeof(φ),typeof(∇φ),typeof(nothing),typeof(nothing)}(φ,∇φ,nothing,nothing)
 end
