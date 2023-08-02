@@ -152,31 +152,43 @@ export fill_quad_data
 export fill_quad_data_in_unit_cube
 export to_physical_domain!
 
-fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,degree::Int) where {D,V} =
-  fill_cpp_data(phi,partition,xmin,xmax,degree,Val{length(xmin)}())
+fill_cpp_data_raw(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,degree::Int) where {D,V} =
+  fill_cpp_data_raw(phi,partition,xmin,xmax,degree,Val{length(xmin)}())
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,::Val{2})
+function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{2})
   cpp_f = @safe_cfunction(lsbufferφ, Float64, (ConstCxxRef{AlgoimUvector{Float64,2}},Float32))
   cpp_g = @safe_cfunction(lsbuffer∇φ, ConstCxxRef{AlgoimUvector{Float64,2}}, (ConstCxxRef{AlgoimUvector{Float64,2}},Float32))
   safecls = SafeCFunctionLevelSet{Int32(2)}(cpp_f,cpp_g)
   coords = eltype(xmin)[]
-  _fill_cpp_data(safecls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
-  nd = 2; np = (partition[1]+1)*(partition[2]+1)
-  coords = reshape(coords,(nd,np))
-  coords = typeof(xmin)[eachcol(reshape(coords,(nd,np)))...]
+  _fill_cpp_data_degree_dispatch(safecls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
+  coords
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,::Val{3})
+function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{3})
   cpp_f = @safe_cfunction(lsbufferφ, Float64, (ConstCxxRef{AlgoimUvector{Float64,3}},Float32))
   cpp_g = @safe_cfunction(lsbuffer∇φ, ConstCxxRef{AlgoimUvector{Float64,3}}, (ConstCxxRef{AlgoimUvector{Float64,3}},Float32))
   safecls = SafeCFunctionLevelSet{Int32(3)}(cpp_f,cpp_g)
   coords = eltype(xmin)[]
-  _fill_cpp_data(safecls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
-  nd = 3; np = (partition[1]+1)*(partition[2]+1)*(partition[3]+1)
-  coords = typeof(xmin)[eachcol(reshape(coords,(nd,np)))...]
+  _fill_cpp_data_degree_dispatch(safecls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
+  coords
 end
 
-function _fill_cpp_data(phi,partition,xmin,xmax,coords,degree)
+fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,degree::Int) where {D,V} =
+  fill_cpp_data(phi,partition,xmin,xmax,degree,Val{length(xmin)}())
+
+function fill_cpp_data(phi,partition,xmin,xmax,degree,::Val{2})
+  coords = fill_cpp_data_raw(phi,partition,xmin,xmax,degree,Val{2}())
+  np = (partition[1]+1)*(partition[2]+1)
+  typeof(xmin)[eachcol(reshape(coords,(2,np)))...]
+end
+
+function fill_cpp_data(phi,partition,xmin,xmax,degree,::Val{3})
+  coords = fill_cpp_data_raw(phi,partition,xmin,xmax,degree,Val{3}())
+  np = (partition[1]+1)*(partition[2]+1)*(partition[3]+1)
+  typeof(xmin)[eachcol(reshape(coords,(3,np)))...]
+end
+
+function _fill_cpp_data_degree_dispatch(phi,partition,xmin,xmax,coords,degree)
   if degree == 2
     fill_cpp_data_taylor_2(phi,partition,xmin,xmax,coords)
   elseif degree == 3
@@ -193,5 +205,6 @@ function _fill_cpp_data(phi,partition,xmin,xmax,coords,degree)
 end
 
 export fill_cpp_data
+export fill_cpp_data_raw
 
 end
