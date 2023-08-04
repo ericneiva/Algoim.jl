@@ -3,6 +3,7 @@ using Test
 
 @testset "Algoim.jl" begin
 
-  @time @testset "Algoim" begin include("AlgoimTests.jl") end
+  @time @testset "Quadrature" begin include("QuadratureTests.jl") end
+  @time @testset "Closest-Point-Projections" begin include("ClosestPointTests.jl") end
 
 end

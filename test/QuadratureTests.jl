@@ -1,4 +1,4 @@
-module AlgoimTests
+module QuadratureTests
 
 using Test
 using CxxWrap
