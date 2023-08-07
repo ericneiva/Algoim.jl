@@ -179,9 +179,9 @@ fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,degre
 function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number}
   map(eachcol(coords)) do cd
     for i in eachindex(cd)
-      if ( cd[i] < xmin[i] ) & ( cd[i] > xmin[i] - limitstol )
+      if ( cd[i] < xmin[i] ) && ( cd[i] > xmin[i] - limitstol )
         cd[i] = xmin[i]
-      elseif ( cd[i] > xmax[i] ) & ( cd[i] < xmax[i] + limitstol )
+      elseif ( cd[i] > xmax[i] ) && ( cd[i] < xmax[i] + limitstol )
         cd[i] = xmax[i]
       end
     end
