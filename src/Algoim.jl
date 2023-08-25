@@ -173,8 +173,8 @@ function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{3})
   coords
 end
 
-fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,degree::Int=2,limitstol::Float64=1.0e-8) where {D,V} =
-  fill_cpp_data(phi,partition,xmin,xmax,degree,limitstol,Val{length(xmin)}())
+fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8) where {D,V} =
+  fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,Val{length(xmin)}())
 
 function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number}
   map(eachcol(coords)) do cd
@@ -188,19 +188,19 @@ function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number
   end
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,limitstol,::Val{2})
+function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{2})
   coords = fill_cpp_data_raw(phi,partition,xmin,xmax,degree,Val{2}())
   np = (partition[1]+1)*(partition[2]+1)
   coords = reshape(coords,(2,np))
-  trim_to_limits!(coords,xmin,xmax,limitstol)
+  trim && trim_to_limits!(coords,xmin,xmax,limitstol)
   typeof(xmin)[eachcol(coords)...]
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,limitstol,::Val{3})
+function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{3})
   coords = fill_cpp_data_raw(phi,partition,xmin,xmax,degree,Val{3}())
   np = (partition[1]+1)*(partition[2]+1)*(partition[3]+1)
   coords = reshape(coords,(3,np))
-  trim_to_limits!(coords,xmin,xmax,limitstol)
+  trim && trim_to_limits!(coords,xmin,xmax,limitstol)
   typeof(xmin)[eachcol(coords)...]
 end
 
