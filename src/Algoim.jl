@@ -48,22 +48,10 @@ export to_array
 
 # AlgoimCallLevelSetFunction
 
-function ls_value_wrap(x,id::Float32,params::Ptr{Cvoid})
+function julials_wrap(x,id::Float32,params::Ptr{Cvoid})
   f = unsafe_pointer_to_objref(params)::Function
   _x = to_const_array(x)
-  f(_x,id)::Float64
-end
-
-function ls_grad_wrap_2D(x,id::Float32,params::Ptr{Cvoid})
-  g = unsafe_pointer_to_objref(params)::Function
-  _x = to_const_array(x)
-  g(_x,id)::ConstCxxRef{AlgoimUvector{Float64,2}}
-end
-
-function ls_grad_wrap_3D(x,id::Float32,params::Ptr{Cvoid})
-  g = unsafe_pointer_to_objref(params)::Function
-  _x = to_const_array(x)
-  g(_x,id)::ConstCxxRef{AlgoimUvector{Float64,3}}
+  f(_x,id)
 end
 
 struct AlgoimCallLevelSetFunction{A,B,C,D} <: LevelSetFunction
@@ -103,8 +91,8 @@ fill_quad_data(phi::AlgoimCallLevelSetFunction,xmin::V,xmax::V,phase::Int,degree
   fill_quad_data(phi,xmin,xmax,phase,degree,cell_id,Val{length(xmin)}())
 
 function fill_quad_data(phi,xmin,xmax,phase,degree,cell_id,::Val{2})
-  ls_value_wrap_2D_c = @safe_cfunction(ls_value_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
-  ls_grad_wrap_2D_c = @safe_cfunction(ls_grad_wrap_2D,ConstCxxRef{AlgoimUvector{Float64,2}},(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
+  ls_value_wrap_2D_c = @safe_cfunction(julials_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
+  ls_grad_wrap_2D_c = @safe_cfunction(julials_wrap,ConstCxxRef{AlgoimUvector{Float64,2}},(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
   cpp_f = ClosureLevelSet{Int32(2)}(ls_value_wrap_2D_c,phi.φ)
   cpp_g = ClosureLevelSet{Int32(2)}(ls_grad_wrap_2D_c,phi.∇φ)
   jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g)
@@ -113,8 +101,8 @@ function fill_quad_data(phi,xmin,xmax,phase,degree,cell_id,::Val{2})
 end
 
 function fill_quad_data(phi,xmin,xmax,phase,degree,cell_id,::Val{3})
-  ls_value_wrap_3D_c = @safe_cfunction(ls_value_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
-  ls_grad_wrap_3D_c = @safe_cfunction(ls_grad_wrap_3D,ConstCxxRef{AlgoimUvector{Float64,3}},(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
+  ls_value_wrap_3D_c = @safe_cfunction(julials_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
+  ls_grad_wrap_3D_c = @safe_cfunction(julials_wrap,ConstCxxRef{AlgoimUvector{Float64,3}},(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
   cpp_f = ClosureLevelSet{Int32(3)}(ls_value_wrap_3D_c,phi.φ)
   cpp_g = ClosureLevelSet{Int32(3)}(ls_grad_wrap_3D_c,phi.∇φ)
   jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g)
@@ -159,8 +147,8 @@ fill_cpp_data_raw(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,d
   fill_cpp_data_raw(phi,partition,xmin,xmax,degree,Val{length(xmin)}())
 
 function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{2})
-  ls_value_wrap_2D_c = @safe_cfunction(ls_value_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
-  ls_grad_wrap_2D_c = @safe_cfunction(ls_grad_wrap_2D,ConstCxxRef{AlgoimUvector{Float64,2}},(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
+  ls_value_wrap_2D_c = @safe_cfunction(julials_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
+  ls_grad_wrap_2D_c = @safe_cfunction(julials_wrap,ConstCxxRef{AlgoimUvector{Float64,2}},(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
   cpp_f = ClosureLevelSet{Int32(2)}(ls_value_wrap_2D_c,phi.φ)
   cpp_g = ClosureLevelSet{Int32(2)}(ls_grad_wrap_2D_c,phi.∇φ)
   jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g)
@@ -170,8 +158,8 @@ function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{2})
 end
 
 function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{3})
-  ls_value_wrap_3D_c = @safe_cfunction(ls_value_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
-  ls_grad_wrap_3D_c = @safe_cfunction(ls_grad_wrap_3D,ConstCxxRef{AlgoimUvector{Float64,3}},(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
+  ls_value_wrap_3D_c = @safe_cfunction(julials_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
+  ls_grad_wrap_3D_c = @safe_cfunction(julials_wrap,ConstCxxRef{AlgoimUvector{Float64,3}},(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
   cpp_f = ClosureLevelSet{Int32(3)}(ls_value_wrap_3D_c,phi.φ)
   cpp_g = ClosureLevelSet{Int32(3)}(ls_grad_wrap_3D_c,phi.∇φ)
   jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g)
