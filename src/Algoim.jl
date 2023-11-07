@@ -57,7 +57,23 @@ function julia_function_wrap(x,id::Float32,params::Ptr{Cvoid})
   f(_x,id)
 end
 
+mutable struct CachedLevelSetValue{A,B} <: Function
+  f::A
+  c::B
+end
+
+(φ::CachedLevelSetValue{<:Function})(p,i::Float32) = φ.f(p)
+
+mutable struct CachedLevelSetGradient{A,B} <: Function
+  f::A
+  c::B
+end
+
+(φ::CachedLevelSetGradient{<:Function})(p,i::Float32) = φ.f(p)
+
 export julia_function_wrap
+export CachedLevelSetValue
+export CachedLevelSetGradient
 
 # AlgoimCallLevelSetFunction
 
@@ -68,9 +84,7 @@ struct AlgoimCallLevelSetFunction{A,B,C,D} <: LevelSetFunction
   cache_∇φ::D
 end
 
-function AlgoimCallLevelSetFunction(f::Function,g::Function)
-  φ(p) = f(p); ∇φ(p) = g(p)
-  φ(p,i::Float32) = f(p); ∇φ(p,i::Float32) = g(p)
+function AlgoimCallLevelSetFunction(φ::Function,∇φ::Function)
   AlgoimCallLevelSetFunction{typeof(φ),typeof(∇φ),typeof(nothing),typeof(nothing)}(φ,∇φ,nothing,nothing)
 end
 
@@ -100,8 +114,10 @@ fill_quad_data(phi::AlgoimCallLevelSetFunction,xmin::V,xmax::V,phase::Int,degree
 function fill_quad_data(phi,xmin,xmax,phase,degree,cell_id,::Val{2})
   ls_value_wrap_2D_c = @safe_cfunction(julia_function_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
   ls_grad_wrap_2D_c = @safe_cfunction(julia_function_wrap,ConstCxxRef{AlgoimUvector{Float64,2}},(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
-  cpp_f = ClosureLevelSet{Int32(2)}(ls_value_wrap_2D_c,phi.φ)
-  cpp_g = ClosureLevelSet{Int32(2)}(ls_grad_wrap_2D_c,phi.∇φ)
+  _cpp_f = CachedLevelSetValue(phi.φ,phi.cache_φ); CxxWrap.gcprotect(_cpp_f)
+  _cpp_g = CachedLevelSetGradient(phi.∇φ,phi.cache_∇φ); CxxWrap.gcprotect(_cpp_g)  
+  cpp_f = ClosureLevelSet{Int32(2)}(ls_value_wrap_2D_c,_cpp_f)
+  cpp_g = ClosureLevelSet{Int32(2)}(ls_grad_wrap_2D_c,_cpp_g)
   jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g)
   coords, weights = fill_quad_data_in_unit_cube(jls,xmin,xmax,phase,degree,cell_id)
   coords, weights = to_physical_domain!(coords,weights,phi,xmin,xmax,phase,cell_id)
@@ -110,8 +126,10 @@ end
 function fill_quad_data(phi,xmin,xmax,phase,degree,cell_id,::Val{3})
   ls_value_wrap_3D_c = @safe_cfunction(julia_function_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
   ls_grad_wrap_3D_c = @safe_cfunction(julia_function_wrap,ConstCxxRef{AlgoimUvector{Float64,3}},(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
-  cpp_f = ClosureLevelSet{Int32(3)}(ls_value_wrap_3D_c,phi.φ)
-  cpp_g = ClosureLevelSet{Int32(3)}(ls_grad_wrap_3D_c,phi.∇φ)
+  _cpp_f = CachedLevelSetValue(phi.φ,phi.cache_φ); CxxWrap.gcprotect(_cpp_f)
+  _cpp_g = CachedLevelSetGradient(phi.∇φ,phi.cache_∇φ); CxxWrap.gcprotect(_cpp_g)  
+  cpp_f = ClosureLevelSet{Int32(3)}(ls_value_wrap_3D_c,_cpp_f)
+  cpp_g = ClosureLevelSet{Int32(3)}(ls_grad_wrap_3D_c,_cpp_g)
   jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g)
   coords, weights = fill_quad_data_in_unit_cube(jls,xmin,xmax,phase,degree,cell_id)
   coords, weights = to_physical_domain!(coords,weights,phi,xmin,xmax,phase,cell_id)
@@ -162,8 +180,10 @@ fill_cpp_data_raw(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,d
 function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{2})
   ls_value_wrap_2D_c = @safe_cfunction(julia_function_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
   ls_grad_wrap_2D_c = @safe_cfunction(julia_function_wrap,ConstCxxRef{AlgoimUvector{Float64,2}},(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
-  cpp_f = ClosureLevelSet{Int32(2)}(ls_value_wrap_2D_c,phi.φ)
-  cpp_g = ClosureLevelSet{Int32(2)}(ls_grad_wrap_2D_c,phi.∇φ)
+  _cpp_f = CachedLevelSetValue(phi.φ,phi.cache_φ); CxxWrap.gcprotect(_cpp_f)
+  _cpp_g = CachedLevelSetGradient(phi.∇φ,phi.cache_∇φ); CxxWrap.gcprotect(_cpp_g)  
+  cpp_f = ClosureLevelSet{Int32(2)}(ls_value_wrap_2D_c,_cpp_f)
+  cpp_g = ClosureLevelSet{Int32(2)}(ls_grad_wrap_2D_c,_cpp_g)
   jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g)
   coords = eltype(xmin)[]
   _fill_cpp_data_degree_dispatch(jls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
@@ -173,8 +193,10 @@ end
 function fill_cpp_data_raw(phi,partition,xmin,xmax,degree,::Val{3})
   ls_value_wrap_3D_c = @safe_cfunction(julia_function_wrap,Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
   ls_grad_wrap_3D_c = @safe_cfunction(julia_function_wrap,ConstCxxRef{AlgoimUvector{Float64,3}},(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
-  cpp_f = ClosureLevelSet{Int32(3)}(ls_value_wrap_3D_c,phi.φ)
-  cpp_g = ClosureLevelSet{Int32(3)}(ls_grad_wrap_3D_c,phi.∇φ)
+  _cpp_f = CachedLevelSetValue(phi.φ,phi.cache_φ); CxxWrap.gcprotect(_cpp_f)
+  _cpp_g = CachedLevelSetGradient(phi.∇φ,phi.cache_∇φ); CxxWrap.gcprotect(_cpp_g)  
+  cpp_f = ClosureLevelSet{Int32(3)}(ls_value_wrap_3D_c,_cpp_f)
+  cpp_g = ClosureLevelSet{Int32(3)}(ls_grad_wrap_3D_c,_cpp_g)
   jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g)
   coords = eltype(xmin)[]
   _fill_cpp_data_degree_dispatch(jls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
