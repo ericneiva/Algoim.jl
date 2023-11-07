@@ -13,9 +13,6 @@ end
 __init__() = @initcxx
 
 export LevelSetFunction
-export ClosureLevelSet
-export JuliaFunction2DLevelSet
-export JuliaFunction3DLevelSet
 
 to_uvector(x) = to_uvector(x,Val{length(x)}())
 to_uvector(x,::Val{2}) = to_2D_uvector(x)
