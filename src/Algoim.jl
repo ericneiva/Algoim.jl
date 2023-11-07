@@ -52,7 +52,7 @@ export to_array
 # https://docs.julialang.org/en/v1/manual/calling-c-and-fortran-code/#Closure-cfunctions
 
 function julia_function_wrap(x,id::Float32,params::Ptr{Cvoid})
-  f = unsafe_pointer_to_objref(params)
+  f = unsafe_pointer_to_objref(params)::Function
   _x = to_const_array(x)
   f(_x,id)
 end
