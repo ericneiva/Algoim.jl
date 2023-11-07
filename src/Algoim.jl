@@ -9,7 +9,7 @@ if !isdefined(algoimWrapper_jll, :libalgoimwrapper_path)
   error("algoimWrapper_jll not available on this platform")
 end
 
-@wrapmodule(libalgoimwrapper)
+@wrapmodule(() -> libalgoimwrapper)
 __init__() = @initcxx
 
 export LevelSetFunction
