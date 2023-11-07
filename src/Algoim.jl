@@ -46,13 +46,20 @@ const CUT = 0
 
 export to_array
 
-# AlgoimCallLevelSetFunction
+# Wrapper to implement the strategy presented in the blog post
+# https://julialang.org/blog/2013/05/callback/#passing_closures_via_pass-through_pointers
+# in order to avoid @cfunction closures which do not work on ARM architectures
+# https://docs.julialang.org/en/v1/manual/calling-c-and-fortran-code/#Closure-cfunctions
 
 function julia_function_wrap(x,id::Float32,params::Ptr{Cvoid})
   f = unsafe_pointer_to_objref(params)::Function
   _x = to_const_array(x)
-  f(_x)
+  f(_x,id)
 end
+
+export julia_function_wrap
+
+# AlgoimCallLevelSetFunction
 
 struct AlgoimCallLevelSetFunction{A,B,C,D} <: LevelSetFunction
   φ::A
@@ -61,7 +68,9 @@ struct AlgoimCallLevelSetFunction{A,B,C,D} <: LevelSetFunction
   cache_∇φ::D
 end
 
-function AlgoimCallLevelSetFunction(φ::Function,∇φ::Function)
+function AlgoimCallLevelSetFunction(f::Function,g::Function)
+  φ(p) = f(p); ∇φ(p) = g(p)
+  φ(p,i::Float32) = f(p); ∇φ(p,i::Float32) = g(p)
   AlgoimCallLevelSetFunction{typeof(φ),typeof(∇φ),typeof(nothing),typeof(nothing)}(φ,∇φ,nothing,nothing)
 end
 
