@@ -137,13 +137,12 @@ end
 function fill_quad_data(phi::AlgoimCallLevelSetFunction,
                         xmin::V,xmax::V,phase::Int,degree::Int,cell_id::Int=1) where {V}
   jls = JuliaFunctionLevelSet(phi,Val{length(xmin)}())
-  coords, weights = fill_quad_data_in_unit_cube(jls,xmin,xmax,phase,degree,cell_id)
-  coords, weights = to_physical_domain!(coords,weights,phi,xmin,xmax,phase,cell_id)
+  fill_quad_data(jls,phi,xmin,xmax,phase,degree,cell_id)
 end
 
-function fill_quad_data(julials::LevelSetFunction,phi::AlgoimCallLevelSetFunction,
+function fill_quad_data(jls::LevelSetFunction,phi::AlgoimCallLevelSetFunction,
                         xmin::V,xmax::V,phase::Int,degree::Int,cell_id::Int=1) where {V}
-  coords, weights = fill_quad_data_in_unit_cube(julials,xmin,xmax,phase,degree,cell_id)
+  coords, weights = fill_quad_data_in_unit_cube(jls,xmin,xmax,phase,degree,cell_id)
   coords, weights = to_physical_domain!(coords,weights,phi,xmin,xmax,phase,cell_id)
 end
 
