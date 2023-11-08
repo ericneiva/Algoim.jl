@@ -153,6 +153,32 @@ function fill_quad_data_in_unit_cube(phi,xmin::V,xmax::V,phase,degree,cell_id::I
   coords, weights
 end
 
+function fill_quad_data(phi1::AlgoimCallLevelSetFunction,phi2::AlgoimCallLevelSetFunction,
+                        xmin::V,xmax::V,phase1::Int,phase2::Int,degree::Int,cell_id::Int=1) where {V}
+  jls1 = JuliaFunctionLevelSet(phi1,Val{length(xmin)}())
+  jls2 = JuliaFunctionLevelSet(phi2,Val{length(xmin)}())
+  fill_quad_data(jls1,jls2,phi1,phi2,xmin,xmax,phase1,phase2,degree,cell_id)
+end
+
+function fill_quad_data(jls1::LevelSetFunction,jls2::LevelSetFunction,
+                        phi1::AlgoimCallLevelSetFunction,phi2::AlgoimCallLevelSetFunction,
+                        xmin::V,xmax::V,phase1::Int,phase2::Int,degree::Int,cell_id::Int=1) where {V}
+  coords, weights = fill_quad_data_in_unit_cube(jls1,jls2,xmin,xmax,phase1,phase2,degree,cell_id)
+  # coords, weights = to_physical_domain!(coords,weights,phi,xmin,xmax,phase,cell_id)
+end
+
+function fill_quad_data_in_unit_cube(phi1,phi2,xmin::V,xmax::V,phase1,phase2,degree,cell_id::Int=1) where {V}
+  T = eltype(xmin)
+  coords = T[]; weights = T[]
+  fill_quad_data_cpp(phi1,phi2,coords,weights,
+                     to_array(xmin),to_array(xmax),
+                     degree,phase1,phase2,Float32(cell_id))
+  nd = length(xmin); np = length(weights)
+  coords = reshape(coords,(nd,np))
+  coords = V[ coords[:,i] for i in 1:np ]
+  coords, weights
+end
+
 function to_physical_domain!(coords::Vector{V},weights::Vector{T},phi::LevelSetFunction,
                              xmin::V,xmax::V,phase::Int,cell_id::Int=1) where {T,V}
   range = xmax - xmin
