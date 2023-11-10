@@ -1,7 +1,7 @@
 name = "Algoim"
 uuid = "0eb9048c-21de-4c7a-bfac-056de1940b74"
 authors = ["Eric Neiva <eric.miranda-neiva@college-de-france.fr>"]
-version = "0.1.2"
+version = "0.2.1"
 
 [deps]
 CxxWrap = "1f15a43c-97ca-5a2a-ae31-89f07a497df4"
@@ -10,9 +10,9 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 algoimWrapper_jll = "3c43aa7b-5398-51f3-8d75-8f051e6faa4d"
 
 [compat]
-CxxWrap = "0.13"
+CxxWrap = "0.14"
 StaticArrays = "1.5"
-algoimWrapper_jll = "0.1"
+algoimWrapper_jll = "0.2"
 julia = "1.6"
 
 [extras]
