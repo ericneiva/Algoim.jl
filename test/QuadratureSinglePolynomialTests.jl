@@ -1,4 +1,4 @@
-module QuadratureTests
+module QuadratureSinglePolynomialTests
 
 using Test
 using CxxWrap

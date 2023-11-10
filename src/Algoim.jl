@@ -164,7 +164,13 @@ function fill_quad_data(jls1::LevelSetFunction,jls2::LevelSetFunction,
                         phi1::AlgoimCallLevelSetFunction,phi2::AlgoimCallLevelSetFunction,
                         xmin::V,xmax::V,phase1::Int,phase2::Int,degree::Int,cell_id::Int=1) where {V}
   coords, weights = fill_quad_data_in_unit_cube(jls1,jls2,xmin,xmax,phase1,phase2,degree,cell_id)
-  # coords, weights = to_physical_domain!(coords,weights,phi,xmin,xmax,phase,cell_id)
+  if phase1 == CUT
+    coords, weights = to_physical_domain!(coords,weights,phi1,xmin,xmax,phase1,cell_id)
+  elseif phase2 == CUT
+    coords, weights = to_physical_domain!(coords,weights,phi2,xmin,xmax,phase2,cell_id)
+  else # phase1,phase2 ∈ {IN,OUT}; we can choose any of the two
+    coords, weights = to_physical_domain!(coords,weights,phi1,xmin,xmax,phase1,cell_id)
+  end
 end
 
 function fill_quad_data_in_unit_cube(phi1,phi2,xmin::V,xmax::V,phase1,phase2,degree,cell_id::Int=1) where {V}
