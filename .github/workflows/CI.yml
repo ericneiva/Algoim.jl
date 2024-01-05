@@ -24,12 +24,6 @@ jobs:
           - ubuntu-latest
         arch:
           - x64
-          - x86
-        exclude:
-          - os: macOS-latest
-            arch: x86
-          - os: ubuntu-latest
-            arch: x86
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
