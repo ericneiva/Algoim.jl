@@ -17,6 +17,7 @@ jobs:
     strategy:
       matrix:
         version:
+          - '1.6'
           - '1.9'
         os:
           - macOS-latest
