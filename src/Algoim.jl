@@ -211,8 +211,9 @@ export to_physical_domain!
 
 fill_cpp_data(phi::AlgoimCallLevelSetFunction,
               partition::D,xmin::V,xmax::V,
-              degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8) where {D,V} =
-  fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,Val{length(xmin)}())
+              degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8,
+              imin::D=D[1,1,1],imax::D=imin+partition) where {D,V} =
+  fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,imin,imax,Val{length(xmin)}())
 
 function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number}
   map(eachcol(coords)) do cd
@@ -226,7 +227,7 @@ function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number
   end
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{2})
+function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,imin,imax,::Val{2})
   ls_v_wrap_c = @safe_cfunction(julia_function_wrap,
     Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
   ls_g_wrap_c = @safe_cfunction(julia_function_wrap,
@@ -237,14 +238,21 @@ function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{2})
   cpp_g = ClosureLevelSet{Int32(2)}(ls_g_wrap_c,_cpp_g)
   jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g)
   coords = eltype(xmin)[]
-  _fill_cpp_data_degree_dispatch(jls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
-  np = (partition[1]+1)*(partition[2]+1)
+  _fill_cpp_data_degree_dispatch(jls,
+                                 to_array(partition),
+                                 to_array(xmin),
+                                 to_array(xmax),
+                                 to_array(imin),
+                                 to_array(imax),
+                                 to_array(coords),
+                                 degree)
+  np = round(Int,length(coords)/2)
   coords = reshape(coords,(2,np))
   trim && trim_to_limits!(coords,xmin,xmax,limitstol)
   typeof(xmin)[eachcol(coords)...]
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{3})
+function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,imin,imax,::Val{3})
   ls_v_wrap_c = @safe_cfunction(julia_function_wrap,
     Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
   ls_g_wrap_c = @safe_cfunction(julia_function_wrap,
@@ -255,24 +263,31 @@ function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{3})
   cpp_g = ClosureLevelSet{Int32(3)}(ls_g_wrap_c,_cpp_g)
   jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g)
   coords = eltype(xmin)[]
-  _fill_cpp_data_degree_dispatch(jls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
-  np = (partition[1]+1)*(partition[2]+1)*(partition[3]+1)
+  _fill_cpp_data_degree_dispatch(jls,
+                                 to_array(partition),
+                                 to_array(xmin),
+                                 to_array(xmax),
+                                 to_array(imin),
+                                 to_array(imax),
+                                 to_array(coords),
+                                 degree)
+  np = round(Int,length(coords)/3)
   coords = reshape(coords,(3,np))
   trim && trim_to_limits!(coords,xmin,xmax,limitstol)
   typeof(xmin)[eachcol(coords)...]
 end
 
-function _fill_cpp_data_degree_dispatch(phi,partition,xmin,xmax,coords,degree)
+function _fill_cpp_data_degree_dispatch(phi,partition,xmin,xmax,imin,imax,coords,degree)
   if degree == 2
-    fill_cpp_data_taylor_2(phi,partition,xmin,xmax,coords)
+    fill_cpp_data_taylor_2(phi,partition,xmin,xmax,imin,imax,coords)
   elseif degree == 3
-    fill_cpp_data_taylor_3(phi,partition,xmin,xmax,coords)
+    fill_cpp_data_taylor_3(phi,partition,xmin,xmax,imin,imax,coords)
   elseif degree == 4
-    fill_cpp_data_taylor_4(phi,partition,xmin,xmax,coords)
+    fill_cpp_data_taylor_4(phi,partition,xmin,xmax,imin,imax,coords)
   elseif degree == 5
-    fill_cpp_data_taylor_5(phi,partition,xmin,xmax,coords)
+    fill_cpp_data_taylor_5(phi,partition,xmin,xmax,imin,imax,coords)
   elseif degree == -1
-    fill_cpp_data_cubic(phi,partition,xmin,xmax,coords)
+    fill_cpp_data_cubic(phi,partition,xmin,xmax,imin,imax,coords)
   else
     error("Not implemented")
   end
