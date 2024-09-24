@@ -146,7 +146,9 @@ end
 function fill_quad_data_in_unit_cube(phi,xmin::V,xmax::V,phase,degree,cell_id::Int=1) where {V}
   T = eltype(xmin)
   coords = T[]; weights = T[]
-  fill_quad_data_cpp(phi,coords,weights,to_array(xmin),to_array(xmax),degree,phase,Float32(cell_id))
+  fill_quad_data_cppcall(phi,coords,weights,
+                         to_array(xmin),to_array(xmax),
+                         degree,phase,Float32(cell_id))
   nd = length(xmin); np = length(weights)
   coords = reshape(coords,(nd,np))
   coords = V[ coords[:,i] for i in 1:np ]
@@ -176,9 +178,9 @@ end
 function fill_quad_data_in_unit_cube(phi1,phi2,xmin::V,xmax::V,phase1,phase2,degree,cell_id::Int=1) where {V}
   T = eltype(xmin)
   coords = T[]; weights = T[]
-  fill_quad_data_cpp(phi1,phi2,coords,weights,
-                     to_array(xmin),to_array(xmax),
-                     degree,phase1,phase2,Float32(cell_id))
+  fill_quad_data_cppcall(phi1,phi2,coords,weights,
+                         to_array(xmin),to_array(xmax),
+                         degree,phase1,phase2,Float32(cell_id))
   nd = length(xmin); np = length(weights)
   coords = reshape(coords,(nd,np))
   coords = V[ coords[:,i] for i in 1:np ]
@@ -209,10 +211,15 @@ export fill_quad_data
 export fill_quad_data_in_unit_cube
 export to_physical_domain!
 
-fill_cpp_data(phi::AlgoimCallLevelSetFunction,
-              partition::D,xmin::V,xmax::V,
-              degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8) where {D,V} =
-  fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,Val{length(xmin)}())
+fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,
+              degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8;order::Int=1,
+              rmin=zeros(eltype(partition),length(partition)),rmax=partition) where {D,V} =
+  fill_cpp_data(phi,partition,xmin,xmax,rmin,rmax,order,degree,trim,limitstol,Val(length(xmin)))
+
+fill_cpp_data(phivals::AbstractVector,partition::D,xmin::V,xmax::V,
+              degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8;
+              rmin=zeros(eltype(partition),length(partition)),rmax=partition) where {D,V} =
+  fill_cpp_data(phivals,partition,xmin,xmax,rmin,rmax,degree,trim,limitstol,Val(length(xmin)))
 
 function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number}
   map(eachcol(coords)) do cd
@@ -226,7 +233,7 @@ function trim_to_limits!(coords::Matrix{T},xmin,xmax,limitstol) where {T<:Number
   end
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{2})
+function fill_cpp_data(phi,partition,xmin,xmax,rmin,rmax,order,degree,trim,limitstol,::Val{2})
   ls_v_wrap_c = @safe_cfunction(julia_function_wrap,
     Float64,(ConstCxxRef{AlgoimUvector{Float64,2}},Float32,Ptr{Cvoid}))
   ls_g_wrap_c = @safe_cfunction(julia_function_wrap,
@@ -235,16 +242,19 @@ function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{2})
   _cpp_g = CachedLevelSetGradient(phi.∇φ,phi.cache_∇φ) 
   cpp_f = ClosureLevelSet{Int32(2)}(ls_v_wrap_c,_cpp_f)
   cpp_g = ClosureLevelSet{Int32(2)}(ls_g_wrap_c,_cpp_g)
-  jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g)
+  jls = JuliaFunction2DLevelSet{Int32(2)}(cpp_f,cpp_g) # JuliaFunction2DLevelSet
   coords = eltype(xmin)[]
-  _fill_cpp_data_degree_dispatch(jls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
-  np = (partition[1]+1)*(partition[2]+1)
+  fill_cpp_data_cppcall(jls,Val(Cint(degree)),to_array(partition),
+                        to_array(xmin),to_array(xmax),
+                        to_array(rmin),to_array(rmax),
+                        to_array(coords),Int32(order))
+  np = num_cpps(rmin,rmax,Val(2))
   coords = reshape(coords,(2,np))
   trim && trim_to_limits!(coords,xmin,xmax,limitstol)
   typeof(xmin)[eachcol(coords)...]
 end
 
-function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{3})
+function fill_cpp_data(phi,partition,xmin,xmax,rmin,rmax,order,degree,trim,limitstol,::Val{3})
   ls_v_wrap_c = @safe_cfunction(julia_function_wrap,
     Float64,(ConstCxxRef{AlgoimUvector{Float64,3}},Float32,Ptr{Cvoid}))
   ls_g_wrap_c = @safe_cfunction(julia_function_wrap,
@@ -253,30 +263,32 @@ function fill_cpp_data(phi,partition,xmin,xmax,degree,trim,limitstol,::Val{3})
   _cpp_g = CachedLevelSetGradient(phi.∇φ,phi.cache_∇φ)
   cpp_f = ClosureLevelSet{Int32(3)}(ls_v_wrap_c,_cpp_f)
   cpp_g = ClosureLevelSet{Int32(3)}(ls_g_wrap_c,_cpp_g)
-  jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g)
+  jls = JuliaFunction3DLevelSet{Int32(3)}(cpp_f,cpp_g) # JuliaFunction3DLevelSet
   coords = eltype(xmin)[]
-  _fill_cpp_data_degree_dispatch(jls,to_array(partition),to_array(xmin),to_array(xmax),to_array(coords),degree)
-  np = (partition[1]+1)*(partition[2]+1)*(partition[3]+1)
+  fill_cpp_data_cppcall(jls,Val(Cint(degree)),to_array(partition),
+                        to_array(xmin),to_array(xmax),
+                        to_array(rmin),to_array(rmax),
+                        to_array(coords),Int32(order))
+  np = num_cpps(rmin,rmax,Val(3))
   coords = reshape(coords,(3,np))
   trim && trim_to_limits!(coords,xmin,xmax,limitstol)
   typeof(xmin)[eachcol(coords)...]
 end
 
-function _fill_cpp_data_degree_dispatch(phi,partition,xmin,xmax,coords,degree)
-  if degree == 2
-    fill_cpp_data_taylor_2(phi,partition,xmin,xmax,coords)
-  elseif degree == 3
-    fill_cpp_data_taylor_3(phi,partition,xmin,xmax,coords)
-  elseif degree == 4
-    fill_cpp_data_taylor_4(phi,partition,xmin,xmax,coords)
-  elseif degree == 5
-    fill_cpp_data_taylor_5(phi,partition,xmin,xmax,coords)
-  elseif degree == -1
-    fill_cpp_data_cubic(phi,partition,xmin,xmax,coords)
-  else
-    error("Not implemented")
-  end
+function fill_cpp_data(phivals,partition,xmin,xmax,rmin,rmax,degree,trim,limitstol,::Val{D}) where {D}
+  coords = eltype(xmin)[]
+  fill_cpp_data_cppcall(Val(Cint(D)),Val(Cint(degree)),to_array(partition),
+                        to_array(xmin),to_array(xmax),
+                        to_array(rmin),to_array(rmax),
+                        to_array(phivals),to_array(coords))
+  np = num_cpps(rmin,rmax,Val(D))
+  coords = reshape(coords,(D,np))
+  trim && trim_to_limits!(coords,xmin,xmax,limitstol)
+  typeof(xmin)[eachcol(coords)...]
 end
+
+num_cpps(rmin,rmax,::Val{2}) = (rmax[1]-rmin[1]+1)*(rmax[2]-rmin[2]+1)
+num_cpps(rmin,rmax,::Val{3}) = (rmax[1]-rmin[1]+1)*(rmax[2]-rmin[2]+1)*(rmax[3]-rmin[3]+1)
 
 export fill_cpp_data
 
