@@ -10,9 +10,9 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 algoimWrapper_jll = "3c43aa7b-5398-51f3-8d75-8f051e6faa4d"
 
 [compat]
-CxxWrap = "0.14"
+CxxWrap = "0.16"
 StaticArrays = "1.5"
-algoimWrapper_jll = "0.2"
+algoimWrapper_jll = "0.3"
 julia = "1.6"
 
 [extras]
