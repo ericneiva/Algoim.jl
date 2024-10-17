@@ -1,7 +1,7 @@
 name = "Algoim"
 uuid = "0eb9048c-21de-4c7a-bfac-056de1940b74"
 authors = ["Eric Neiva <eric.miranda-neiva@college-de-france.fr>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 CxxWrap = "1f15a43c-97ca-5a2a-ae31-89f07a497df4"
