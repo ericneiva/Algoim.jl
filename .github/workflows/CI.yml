@@ -18,9 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.6'
-          - 'latest'
-          - 'nightly'
+          - '1.6' # Replace this with the minimum Julia version that your package supports. 
+          - '1'   # latest stable 1.x releas
+          - 'nightly' # latest nightly release
         os:
           - macOS-latest
           - windows-latest
