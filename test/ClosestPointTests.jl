@@ -25,6 +25,15 @@ function run_case(T,degree)
   coords = fill_cpp_data(phi,partition,xmin,xmax,degree)
   @test maximum(u.(coords)) < 1.0e-4
 
+  sizes = 2.2 ./ partition
+  grid = vec(map(i->xmin+T((Tuple(i).-1).*sizes),CartesianIndices(partition.+1)))
+  vals = phi.(grid)
+
+  pts = reduce(vcat,grid[1:10])
+
+  coords = fill_cpp_data(vals,Int32.(collect(partition)),xmin,xmax,pts,degree)
+  @test maximum(u.(coords)) < 1.0e-4
+
 end
 
 run_case(Float64,2)
@@ -33,5 +42,7 @@ run_case(Float64,4)
 run_case(Float64,5)
 run_case(Float64,-1)
 run_case(SA,2)
+
+run_case_points(SA,2)
 
 end # module
