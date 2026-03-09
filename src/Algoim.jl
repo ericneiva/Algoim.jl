@@ -217,6 +217,11 @@ fill_cpp_data(phi::AlgoimCallLevelSetFunction,partition::D,xmin::V,xmax::V,
   fill_cpp_data(phi,partition,xmin,xmax,rmin,rmax,order,degree,trim,limitstol,Val(length(xmin)))
 
 fill_cpp_data(phivals::AbstractVector,partition::D,xmin::V,xmax::V,
+              degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8;
+              rmin=zeros(eltype(partition),length(partition)),rmax=partition) where {D,V} =
+  fill_cpp_data(phivals,partition,xmin,xmax,rmin,rmax,degree,trim,limitstol,Val(length(xmin)))
+
+fill_cpp_data(phivals::AbstractVector,partition::D,xmin::V,xmax::V,
               points,degree::Int=2,trim::Bool=false,limitstol::Float64=1.0e-8) where {D,V} =
   fill_cpp_data(phivals,partition,xmin,xmax,points,degree,trim,limitstol,Val(length(xmin)))
 
