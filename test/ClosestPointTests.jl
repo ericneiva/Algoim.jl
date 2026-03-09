@@ -34,8 +34,11 @@ function run_case(T,degree)
   coords = fill_cpp_data(vals,Int32.(collect(partition)),xmin,xmax,degree)
   @test maximum(u.(coords)) < 1.0e-4
 
-  pts = reduce(vcat,grid[1:10])
+  np = 10
+  pts = reduce(vcat,grid[1:np])
   coords = fill_cpp_data(vals,Int32.(collect(partition)),xmin,xmax,pts,degree)
+  coords = reshape(coords,(length(xmin),np))
+  coords = typeof(xmin)[eachcol(coords)...]
   @test maximum(u.(coords)) < 1.0e-4
 
 end
