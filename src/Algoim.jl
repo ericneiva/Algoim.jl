@@ -296,10 +296,13 @@ function fill_cpp_data(phivals,partition,xmin,xmax,points,degree,trim,limitstol,
   fill_cpp_data_cppcall_pts(Val(Cint(D)),Val(Cint(degree)),to_array(partition),
                             to_array(xmin),to_array(xmax),to_array(phivals),
                             points,to_array(coords))
-  np = length(points) ÷ D
-  coords = reshape(coords,(D,np))
-  trim && trim_to_limits!(coords,xmin,xmax,limitstol)
-  typeof(xmin)[eachcol(coords)...]
+  trim && begin
+    np = length(points) ÷ D
+    coords = reshape(coords,(D,np))
+    trim && trim_to_limits!(coords,xmin,xmax,limitstol)
+    coords = vec(coords)
+  end
+  coords
 end
 
 num_cpps(rmin,rmax,::Val{2}) = (rmax[1]-rmin[1]+1)*(rmax[2]-rmin[2]+1)
